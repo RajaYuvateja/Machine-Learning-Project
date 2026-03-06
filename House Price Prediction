@@ -1,0 +1,61 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+
+dataset = pd.read_csv("hyderabad_house_price_cleaned.csv")
+
+available_locations = sorted(dataset["Location"].unique())
+
+X = dataset.drop("Price", axis=1)
+y = dataset["Price"]
+
+X = pd.get_dummies(X, columns=["Location"], drop_first=True)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+model = RandomForestRegressor(
+    n_estimators=300,
+    max_depth=None,
+    random_state=42
+)
+
+model.fit(X_train, y_train)
+
+print("\nModel Performance")
+print("------------------")
+print("Train Accuracy :", round(model.score(X_train, y_train), 4))
+print("Test Accuracy  :", round(model.score(X_test, y_test), 4))
+
+print("\nEnter House Details")
+
+new_area = float(input("Enter Area (sq.ft): "))
+new_bhk = int(input("Enter BHK: "))
+
+print("\nAvailable Locations:")
+for i, loc in enumerate(available_locations):
+    print(f"{i + 1}. {loc}")
+
+choice = int(input("\nSelect Location Number: "))
+
+if choice < 1 or choice > len(available_locations):
+    print("Invalid choice! Exiting...")
+    exit()
+
+new_location = available_locations[choice - 1]
+
+sample = pd.DataFrame({
+    "Area": [new_area],
+    "BHK": [new_bhk],
+    "Location": [new_location]
+})
+
+sample = pd.get_dummies(sample)
+
+sample = sample.reindex(columns=X.columns, fill_value=0)
+
+predicted_price = model.predict(sample)
+
+print("\nSelected Location:", new_location)
+print("Predicted House Price (Lakhs):", round(predicted_price[0], 2))
